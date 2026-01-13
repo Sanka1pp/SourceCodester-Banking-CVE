@@ -47,7 +47,25 @@ The application allows authenticated users to inject arbitrary SQL commands via 
 ### 3.3 Access Control Failures (CWE-639 & CWE-79)
 Administrative dashboards (`mindex.php`) are accessible to unprivileged users via Forced Browsing (IDOR). Additionally, the audit logs (`feedback.php`) are vulnerable to Stored XSS, allowing attackers to hijack administrator sessions by injecting malicious JavaScript into feedback forms.
 
-## 4. Remediation Recommendations
+## 4. Attack Surface Map
+Visualizing the exploitation paths discovered during the audit:
+
+```
+[ EXTERNAL ATTACKER ]
+        │
+        ├── (A) Unauthenticated SQL Injection ──> [ DATABASE DUMP ]
+        │       (Target: get_doctor.php)
+        │
+        ├── (B) Authentication Bypass ──────────> [ ADMIN DASHBOARD ]
+        │       (Target: /admin/ path)                   │
+        │                                                ▼
+        ├── (C) IDOR / Broken Access Control ───> [ PATIENT RECORDS (PHI) ]
+        │       (Target: view-medhistory.php)
+        │
+        └── (D) Stored XSS / CSRF ──────────────> [ ACCOUNT TAKEOVER ]
+                (Target: User Profile / Add Doctor)
+```
+## 5. Remediation Recommendations
 This software is fundamentally insecure and should **not** be used in any production environment. Administrators are advised to:
 1.  **Network Isolation:** Restrict access to the banking panel to trusted IP addresses only.
 2.  **Web Application Firewall (WAF):** Deploy rules to block SQL injection patterns and negative integer inputs.
@@ -56,11 +74,7 @@ This software is fundamentally insecure and should **not** be used in any produc
     * Reject all negative numbers at the API level.
     * Rewrite all queries using `mysqli_prepare()`.
 
-## 5. Credits
-**Research & Discovery:** Sankalp Devidas Hanwate
-**Organization:** Syntropy Security
-
-## 5. Remediation & Patch Analysis
+## 6. Remediation & Patch Analysis
 The vendor has not released a patch. Below is the required code-level remediation for developers.
 
 ### 🛡️ Vulnerable vs. Secure Code Diff
@@ -88,6 +102,9 @@ if ($_SESSION['role'] !== 'admin') {
     exit();
 }
 ```
+## 7. Credits
+**Research & Discovery:** Sankalp Devidas Hanwate
+**Organization:** Syntropy Security
 ---
 ###  Citation & Reference
 **Permanent Link:** [Packet Storm Security Advisory](https://packetstorm.news/files/id/213712)
